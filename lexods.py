@@ -19,10 +19,6 @@ def upload_to_wikidata(lexeme: wikidata.Lexeme = None,
     if lexeme is None or entry is None:
         raise ValueError("Did not get the arguments needed")
     print(f"Uploading id to {lexeme.id}: {lexeme.lemma}")
-    # TODO if numbered
-    # - fetch lexeme using wbi
-    # - present to user
-    # - ask user which if one matches
     print(f"Adding {entry.id}")
     ods_statement = wbi_core.ExternalID(
         prop_nr="P8478",
