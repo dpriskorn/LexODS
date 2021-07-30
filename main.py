@@ -22,11 +22,11 @@ file = open(f"ods_{date}.csv", "a")
 
 
 def main():
-    for x in range(0, 2, 1):
+    for x in range(0, 200000, 1000):
         if x > 0 and x % 1000 == 0:
             print(x)
         data = {
-            "size": 1,
+            "size": 1000,
             "from": x
         }
         response = requests.post("https://ordnet.dk/ods/es/artikel/_search", headers=headers, json=data)
