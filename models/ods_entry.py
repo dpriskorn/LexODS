@@ -21,25 +21,30 @@ class Entry():
         self.lemma = lemma
         self.lexical_category = self.__find_lexical_category_qid(lexical_category)
 
-    @staticmethod
-    def __find_lexical_category_qid(string):
+    def __find_lexical_category_qid(self, string):
         logger = logging.getLogger(__name__)
-        if string == "sb." or string == "symbol" or string == "pl." or string == "fork.":
+        if (string == "sb." or string == "subst."
+                or string == "symbol" or string == "pl." or string == "fork."):
             return "Q1084"  # noun
-        elif string == "vb.":
+        elif string == "vb." or string == "v.":
             return "Q24905"  # verb
-        elif string == "adj.":
+        elif string == "adj." or string == "part.adj.":
             return "Q34698"  # adjective
         elif string == "suffix" or string == "præfiks":
             return "Q62155"  # affix
-        elif string == "udråbsord":
+        elif string == "udråbsord" or string == "interj.":
             return "Q83034"  # interj
         elif string == "præp.":
             return "Q4833830"  # preposition
         elif string == "adv.":
             return "Q380057"  # adverb
+        elif string == "propr.":
+            return "Q147276"  # proper noun
+        elif string == "num.":
+            return "Q63116"  # numeral
         else:
-            logger.error(f"Lexical category {string} not recognized")
+            logger.error(f"Lexical category {string} not recognized, see {self.url()}")
+            exit(0)
 
     def json(self):
         return json.dumps(dict(
