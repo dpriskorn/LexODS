@@ -42,6 +42,8 @@ class Entry():
             return "Q147276"  # proper noun
         elif string == "num.":
             return "Q63116"  # numeral
+        elif string == None:
+            logger.error(f"No lexical category found for {self.url()}")
         else:
             logger.error(f"Lexical category {string} not recognized, see {self.url()}")
             exit(0)

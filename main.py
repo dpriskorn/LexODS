@@ -29,14 +29,20 @@ def main():
             "size": 1000,
             "from": x
         }
-        response = requests.post("https://ordnet.dk/ods/es/artikel/_search", headers=headers, json=data)
+        response = requests.post("https://ordnet.dk/ods/es/artikel/_search",
+                                 headers=headers, json=data)
         if response.status_code == 200:
             entries = response.json()
+            source = entry["_source"]
+            if "pos" in source.keys():
+                lexical_category = ["pos"]
+            else:
+                lexical_category = None
             for entry in entries["hits"]["hits"]:
                 entry = Entry(
                     id=int(entry["_id"]),
-                    lexical_category=entry["_source"]["pos"],
-                    lemma=entry["_source"]["lemma"]
+                    lexical_category=lexical_category,
+                    lemma=source["lemma"]
                 )
                 # print(entry.json())
                 file.write(entry.csv())
