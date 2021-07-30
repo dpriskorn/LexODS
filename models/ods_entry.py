@@ -34,7 +34,7 @@ class Entry():
             return "Q24905"  # verb
         elif string == "adj." or string == "part.adj." or string == "part. adj.":
             return "Q34698"  # adjective
-        elif string == "suffix" or string == "præfiks" or string == "i ssgr.":
+        elif string == "suffix" or string == "præfiks" or string == "i ssgr." or string == "suffiks.":
             return "Q62155"  # affix
         elif string == "udråbsord" or string == "interj.":
             return "Q83034"  # interj
@@ -46,6 +46,10 @@ class Entry():
             return "Q147276"  # proper noun
         elif string == "num.":
             return "Q63116"  # numeral
+        elif string == "konj.":
+            return "Q36484"  # conjunction
+        elif string == "pron.":
+            return "Q36224"  # pronoun
         elif string is None:
             logger.error(f"No lexical category found for {self.url()}")
         # elif string == "subst. ell. (i bet. 1) en." or string == "interj., adj." or string == "adv. og adj.":
