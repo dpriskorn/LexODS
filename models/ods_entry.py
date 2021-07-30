@@ -19,8 +19,8 @@ class Entry():
                  lexical_category: str = None):
         self.id = id
         self.lexical_category = self.__find_lexical_category_qid(lexical_category)
-        # Lowercase nouns to easier match the lemmas with Wikidata
-        if self.lexical_category == "Q1084":
+        # Lowercase all except proper nouns to easier match the lemmas with Wikidata
+        if self.lexical_category != "Q147276":
             self.lemma = lemma.lower()
         else:
             self.lemma = lemma
