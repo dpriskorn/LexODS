@@ -33,4 +33,4 @@ password= "password"
 Everything is under GPLv3+, see the LICENSE file. 
 
 # Credit
-Made with <3 by Dennis Priskorn 2021
+Author: Dennis Priskorn 2021
