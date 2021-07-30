@@ -24,6 +24,8 @@ class Entry():
             self.lemma = lemma.lower()
         else:
             self.lemma = lemma
+        if "aa" in self.lemma:
+            self.lemma = self.lemma.replace("aa", "å")
 
     def __find_lexical_category_qid(self, string):
         logger = logging.getLogger(__name__)
