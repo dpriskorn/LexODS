@@ -18,8 +18,12 @@ class Entry():
                  lemma: str = None,
                  lexical_category: str = None):
         self.id = id
-        self.lemma = lemma
         self.lexical_category = self.__find_lexical_category_qid(lexical_category)
+        # Lowercase nouns to easier match the lemmas with Wikidata
+        if self.lexical_category == "Q1084":
+            self.lemma = lemma.lower()
+        else:
+            self.lemma = lemma
 
     def __find_lexical_category_qid(self, string):
         logger = logging.getLogger(__name__)
@@ -28,9 +32,9 @@ class Entry():
             return "Q1084"  # noun
         elif string == "vb." or string == "v.":
             return "Q24905"  # verb
-        elif string == "adj." or string == "part.adj.":
+        elif string == "adj." or string == "part.adj." or string == "part. adj.":
             return "Q34698"  # adjective
-        elif string == "suffix" or string == "præfiks":
+        elif string == "suffix" or string == "præfiks" or string == "i ssgr.":
             return "Q62155"  # affix
         elif string == "udråbsord" or string == "interj.":
             return "Q83034"  # interj
@@ -42,11 +46,13 @@ class Entry():
             return "Q147276"  # proper noun
         elif string == "num.":
             return "Q63116"  # numeral
-        elif string == None:
+        elif string is None:
             logger.error(f"No lexical category found for {self.url()}")
+        # elif string == "subst. ell. (i bet. 1) en." or string == "interj., adj." or string == "adv. og adj.":
+        #     return None
         else:
             logger.error(f"Lexical category {string} not recognized, see {self.url()}")
-            exit(0)
+            return None
 
     def json(self):
         return json.dumps(dict(

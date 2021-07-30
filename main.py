@@ -12,16 +12,15 @@ from models.ods_entry import Entry
 
 logging.basicConfig(level=logging.ERROR)
 
-headers = {
-    'User-Agent': 'Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:63.0) Gecko/20100101 Firefox/63.0',
-    'Content-Type': 'application/json; charset=UTF-8',
-}
-date = datetime.today().strftime("%Y-%m-%d")
-print(date)
-file = open(f"ods_{date}.csv", "a")
-
 
 def main():
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:63.0) Gecko/20100101 Firefox/63.0',
+        'Content-Type': 'application/json; charset=UTF-8',
+    }
+    date = datetime.today().strftime("%Y-%m-%d")
+    print(date)
+    file = open(f"ods_{date}.csv", "w")
     for x in range(0, 200000, 1000):
         if x > 0 and x % 1000 == 0:
             print(x)
@@ -33,12 +32,12 @@ def main():
                                  headers=headers, json=data)
         if response.status_code == 200:
             entries = response.json()
-            source = entry["_source"]
-            if "pos" in source.keys():
-                lexical_category = ["pos"]
-            else:
-                lexical_category = None
             for entry in entries["hits"]["hits"]:
+                source = entry["_source"]
+                if "pos" in source.keys():
+                    lexical_category = source["pos"].strip()
+                else:
+                    lexical_category = None
                 entry = Entry(
                     id=int(entry["_id"]),
                     lexical_category=lexical_category,
@@ -48,6 +47,7 @@ def main():
                 file.write(entry.csv())
         else:
             raise ValueError(f"Got {response.status_code}, {response.text}")
+    file.close()
 
 
 if __name__ == '__main__':
