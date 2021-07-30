@@ -1,0 +1,8 @@
+{
+  "from": 0,
+  "query": {
+    "match": {
+      "pos": "adj."
+    }
+  }
+}
