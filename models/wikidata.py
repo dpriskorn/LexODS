@@ -32,47 +32,54 @@ class EntityID:
         return f"{self.letter}{self.number}"
 
 
+class ForeignID:
+    id: str
+    property: str  # This is the property with type ExternalId
+    source_item_id: str  # This is the Q-item for the source
+
+    def __init__(self,
+                 id: str = None,
+                 property: str = None,
+                 source_item_id: str = None):
+        self.id = id
+        self.property = EntityID(property).to_string()
+        self.source_item_id = EntityID(source_item_id).to_string()
+
+
 class Lexeme:
     id: str
     lemma: str
     lexical_category: str
-    foreign_id: str
-    property: str
-    foreign_source_id: str
 
     def __init__(self,
                  id: str = None,
                  lemma: str = None,
-                 lexical_category: str = None,
-                 foreign_id: str = None,
-                 property: str = None,
-                 foreign_source_id: str = None):
+                 lexical_category: str = None):
         self.id = EntityID(id).to_string()
         self.lemma = lemma
         self.lexical_category = lexical_category
-        self.foreign_id = foreign_id
-        self.property = EntityID(property).to_string()
-        self.foreign_source_id = EntityID(foreign_source_id).to_string()
 
     def url(self):
         return f"{config.wd_prefix}{self.id}"
 
-    def upload_foreign_id_to_wikidata(self,):
-        """Upload to enrich the wonderfull Wikidata <3"""
+    def upload_foreign_id_to_wikidata(self,
+                                      foreign_id: ForeignID = None):
+        """Upload to enrich the wonderful Wikidata <3"""
         logger = logging.getLogger(__name__)
-        print(f"Uploading {self.foreign_id} to {self.id}: {self.lemma}")
+        if foreign_id is None:
+            raise Exception("Foreign id was None")
+        print(f"Uploading {foreign_id.id} to {self.id}: {self.lemma}")
         statement = wbi_core.ExternalID(
-            prop_nr="P8478",
-            value=self.foreign_id,
+            prop_nr=foreign_id.property,
+            value=foreign_id.id,
         )
         described_by_source = wbi_core.ItemID(
-            prop_nr=self.property,
-            value=self.foreign_source_id
+            prop_nr="P1343",  # stated in
+            value=foreign_id.source_item_id
         )
         item = wbi_core.ItemEngine(
             data=[statement,
                   described_by_source],
-            # append_value="P8478",
             item_id=self.id
         )
         # debug WBI error

@@ -12,40 +12,6 @@ from models import wikidata, ods_entry
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
-
-def upload_to_wikidata(lexeme: wikidata.Lexeme = None,
-                       entry: ods_entry.Entry = None):
-    """Upload to enrich the wonderfull Wikidata <3"""
-    if lexeme is None or entry is None:
-        raise ValueError("Did not get the arguments needed")
-    print(f"Uploading id to {lexeme.id}: {lexeme.lemma}")
-    print(f"Adding {entry.id}")
-    ods_statement = wbi_core.ExternalID(
-        prop_nr="P8478",
-        value=entry.id,
-    )
-    described_by_source = wbi_core.ItemID(
-        prop_nr="P1343",
-        value="Q1935308"
-    )
-    item = wbi_core.ItemEngine(
-        data=[ods_statement,
-              described_by_source],
-        # append_value="P8478",
-        item_id=lexeme.id
-    )
-    # debug WBI error
-    # print(item.get_json_representation())
-    result = item.write(
-        config.login_instance,
-        edit_summary="Added ODS identifier with [[Wikidata:Tools/LexODS]]"
-    )
-    # if config.debug_json:
-    # logging.debug(f"result from WBI:{result}")
-    print(lexeme.url())
-    # exit(0)
-
-
 def fetch_all_lexemes_without_ods_id():
     """download all swedish lexemes via sparql (~23000 as of 2021-04-05)"""
     #dictionary with word as key and list in the value
@@ -196,42 +162,55 @@ def process_lexemes(lexeme_lemma_list: List = None,
                             adj_count += 1
                     for index in matching_ods_indexes:
                         entry = ods_data[index]
-                        logging.debug(f"index {index} lemma: {entry.lemma} {entry.lexical_category} "
-                              f"number {entry.number}, see {entry.url()}")
+                        logging.debug(f"index {index} "
+                                      f"lemma: {entry.lemma} {entry.lexical_category} "
+                                      f"number {entry.number}, see {entry.url()}")
                         result: bool = check_matching_category(lexeme=lexeme,
                                                                ods_entry=entry)
                         if result:
-                            logging.info("Categories match")
                             match_count += 1
                             if not config.count_only:
+                                logging.info("Categories match")
                                 if entry.lexical_category == "subst":
                                     if subst_count > 1:
-                                        logging.info("More that one noun found. Skipping")
+                                        logging.info("More that one noun found "
+                                                     "for this lemma in ODS. Skipping")
                                         skipped_multiple_matches += 1
                                         continue
                                 if entry.lexical_category == "verb":
                                     if verb_count > 1:
-                                        logging.info("More that one verb found. Skipping")
+                                        logging.info("More that one verb found "
+                                                     "for this lemma in ODS. Skipping")
                                         skipped_multiple_matches += 1
                                         continue
                                 if entry.lexical_category == "adj":
                                     if adj_count > 1:
-                                        logging.info("More that one adj found. Skipping")
+                                        logging.info(f"More that one adj found "
+                                                     f"for this lemma in ODS. Skipping")
                                         skipped_multiple_matches += 1
                                         continue
-                                # TODO scrape entry definitions from ODS and let the user decide
-                                # whether any match the senses of the lexeme if any
-                                upload_to_wikidata(lexeme=lexeme, entry=entry)
+                                foreign_id = wikidata.ForeignID(
+                                    id=entry.id,
+                                    property="P8478",
+                                    source_item_id="Q1935308",
+                                )
+                                lexeme.upload_foreign_id_to_wikidata(foreign_id=foreign_id)
             elif value_count == 1:
                 # Only 1 search result in the ODS wordlist so pick it
                 entry = ods_data[matching_ods_indexes[0]]
-                logger.debug(f"Only 1 matching lemma, see {entry.url()}")
-                result = check_matching_category(lexeme=lexeme,
-                                                 ods_entry=entry)
+                logger.debug(f"Only one matching lemma, see {entry.url()}")
+                result: bool = check_matching_category(lexeme=lexeme,
+                                                       ods_entry=entry)
                 if result:
                     match_count += 1
                     if not config.count_only:
-                        upload_to_wikidata(lexeme=lexeme, entry=entry)
+                        logging.info("Categories match")
+                        foreign_id = wikidata.ForeignID(
+                            id=entry.id,
+                            property="P8478",
+                            source_item_id="Q1935308",
+                        )
+                        lexeme.upload_foreign_id_to_wikidata(foreign_id=foreign_id)
         else:
             if not config.count_only:
                 logging.debug(f"{lexeme.lemma} not found in ODS wordlist")
