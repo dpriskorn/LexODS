@@ -8,59 +8,10 @@ from wikibaseintegrator import wbi_core, wbi_login
 
 import config
 from models import wikidata, ods_entry
+from modules import wikidata_util
 
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
-
-def fetch_all_lexemes_without_ods_id():
-    """download all swedish lexemes via sparql (~23000 as of 2021-04-05)"""
-    #dictionary with word as key and list in the value
-    #list[0] = lid
-    #list[1] = category Qid
-    print("Fetching all lexemes")
-    lexemes_data = {}
-    lexeme_lemma_list = []
-    for i in range(0,30000,10000):
-        print(i)
-        results = wbi_core.ItemEngine.execute_sparql_query(f"""
-                select ?lexemeId ?lemma ?category
-            WHERE {{
-              #hint:Query hint:optimizer "None".
-              ?lexemeId dct:language wd:Q9035;
-                        wikibase:lemma ?lemma;
-                        wikibase:lexicalCategory ?category.
-              MINUS{{
-              # FIXME
-                ?lexemeId wdt:P8478 [].
-              }}
-            }}
-    limit 10000
-    offset {i}
-        """)
-        if len(results) == 0:
-            print("No lexeme found")
-        else:
-            for result in results["results"]["bindings"]:
-                #print(result)
-                #*************************
-                # Handle result and upload
-                #*************************
-                lemma = result["lemma"]["value"]
-                lid = result["lexemeId"]["value"].replace(config.wd_prefix, "")
-                lexical_category = result["category"]["value"].replace(config.wd_prefix, "")
-                lexeme = wikidata.Lexeme(
-                    id=lid,
-                    lemma=lemma,
-                    lexical_category=lexical_category
-                )
-                # Populate the dictionary with lexeme objects
-                lexemes_data[lemma] = lexeme
-                # Add lemma to list (used for optimization)
-                lexeme_lemma_list.append(lemma)
-    lexemes_count = len(lexeme_lemma_list)
-    print(f"{lexemes_count} fetched")
-    # exit(0)
-    return lexeme_lemma_list, lexemes_data
 
 
 def load_ods_into_memory():
@@ -105,7 +56,7 @@ def check_matching_category(lexeme: wikidata.Lexeme,
         else:
             return False
     else:
-        return False
+        raise Exception("ODS entry was None")
 
 
 def process_lexemes(lexeme_lemma_list: List = None,
@@ -191,6 +142,7 @@ def process_lexemes(lexeme_lemma_list: List = None,
                                         continue
                                 foreign_id = wikidata.ForeignID(
                                     id=entry.id,
+                                    # fixme
                                     property="P8478",
                                     source_item_id="Q1935308",
                                 )
@@ -207,6 +159,7 @@ def process_lexemes(lexeme_lemma_list: List = None,
                         logging.info("Categories match")
                         foreign_id = wikidata.ForeignID(
                             id=entry.id,
+                            # fixme
                             property="P8478",
                             source_item_id="Q1935308",
                         )
@@ -228,7 +181,12 @@ def main():
         config.login_instance = wbi_login.Login(
             user=config.username, pwd=config.password
         )
-    lexemes_list, lexemes_data = fetch_all_lexemes_without_ods_id()
+    lexemes_list, lexemes_data = (
+        wikidata_util.fetch_lexemes(
+            property="P8478",
+            language_item_id="Q9035"
+        )
+    )
     ods_list, ods_data = load_ods_into_memory()
     process_lexemes(lexeme_lemma_list=lexemes_list, lexemes_data=lexemes_data, ods_lemma_list=ods_list,
                     ods_data=ods_data)
