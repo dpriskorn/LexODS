@@ -15,8 +15,8 @@ logging.basicConfig(level=logging.ERROR)
 
 def main():
     headers = {
-        'User-Agent': 'Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:63.0) Gecko/20100101 Firefox/63.0',
-        'Content-Type': 'application/json; charset=UTF-8',
+        "User-Agent": "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:63.0) Gecko/20100101 Firefox/63.0",
+        "Content-Type": "application/json; charset=UTF-8",
     }
     date = datetime.today().strftime("%Y-%m-%d")
     print(date)
@@ -24,12 +24,10 @@ def main():
     for x in range(0, 200000, 1000):
         if x > 0 and x % 1000 == 0:
             print(x)
-        data = {
-            "size": 1000,
-            "from": x
-        }
-        response = requests.post("https://ordnet.dk/ods/es/artikel/_search",
-                                 headers=headers, json=data)
+        data = {"size": 1000, "from": x}
+        response = requests.post(
+            "https://ordnet.dk/ods/es/artikel/_search", headers=headers, json=data
+        )
         if response.status_code == 200:
             entries = response.json()
             for entry in entries["hits"]["hits"]:
@@ -41,7 +39,7 @@ def main():
                 entry = Entry(
                     id=int(entry["_id"]),
                     lexical_category=lexical_category,
-                    lemma=source["lemma"]
+                    lemma=source["lemma"],
                 )
                 # print(entry.json())
                 file.write(entry.csv())
@@ -50,5 +48,5 @@ def main():
     file.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

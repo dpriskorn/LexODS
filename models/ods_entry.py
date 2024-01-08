@@ -1,74 +1,105 @@
-import json
 import logging
-from typing import List
+
+from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 
-class Entry():
+class Entry(BaseModel):
     lemma: str
     # This id is found in the list we scrape
-    id: str
-    # Entry id is unique and only found on the page of the entry, not in the list we scrape
-    entry_id: int
-    lexical_category: str
+    id: int
+    # # Entry id is unique and only found on the page of the entry, not in the list we scrape
+    # entry_id: int
+    lexical_category_qid: str = ""
+    lexical_category: str = ""
     # each definition also has an id but we don't support that yet
     # definitions: List
 
-    def __init__(self,
-                 id: int = None,
-                 lemma: str = None,
-                 lexical_category: str = None):
-        self.id = id
-        self.lexical_category = self.__find_lexical_category_qid(lexical_category)
+    @property
+    def fixed_lemma(self):
+        lemma = self.lemma.replace("aa", "å")
         # Lowercase all except proper nouns to easier match the lemmas with Wikidata
-        if self.lexical_category != "Q147276":
-            self.lemma = lemma.lower()
-        else:
-            self.lemma = lemma
-        if "aa" in self.lemma:
-            self.lemma = self.lemma.replace("aa", "å")
+        if self.lexical_category_qid != "Q147276":
+            lemma = lemma.lower()
+        return lemma
 
-    def __find_lexical_category_qid(self, string):
-        logger = logging.getLogger(__name__)
-        if (string == "sb." or string == "subst."
-                or string == "symbol" or string == "pl." or string == "fork."):
-            return "Q1084"  # noun
-        elif string == "vb." or string == "v.":
-            return "Q24905"  # verb
-        elif string == "adj." or string == "part.adj." or string == "part. adj.":
-            return "Q34698"  # adjective
-        elif string == "suffix" or string == "præfiks" or string == "i ssgr." or string == "suffiks.":
-            return "Q62155"  # affix
-        elif string == "udråbsord" or string == "interj.":
-            return "Q83034"  # interj
-        elif string == "præp.":
-            return "Q4833830"  # preposition
-        elif string == "adv.":
-            return "Q380057"  # adverb
-        elif string == "propr.":
-            return "Q147276"  # proper noun
-        elif string == "num.":
-            return "Q63116"  # numeral
-        elif string == "konj.":
-            return "Q36484"  # conjunction
-        elif string == "pron.":
-            return "Q36224"  # pronoun
-        elif string is None:
+    # def __init__(self, id: int = None, lemma: str = None, lexical_category: str = None):
+    #     self.id = id
+    #     self.lexical_category = self.__find_lexical_category_qid(lexical_category)
+    #     # Lowercase all except proper nouns to easier match the lemmas with Wikidata
+    #     if self.lexical_category != "Q147276":
+    #         self.lemma = lemma.lower()
+    #     else:
+    #         self.lemma = lemma
+    #     if "aa" in self.lemma:
+    #         self.lemma = self.lemma.replace("aa", "å")
+
+    @property
+    def is_noun(self):
+        return bool(self.lexical_category_qid == "Q1084")
+
+    @property
+    def is_adjective(self):
+        return bool(self.lexical_category_qid == "Q34698")
+
+    @property
+    def is_verb(self):
+        return bool(self.lexical_category_qid == "Q24905")
+
+    def __parse_lexical_category(self):
+        """get the corresponding qid and store it"""
+        if (
+            self.lexical_category == "sb."
+            or self.lexical_category == "subst."
+            or self.lexical_category == "symbol"
+            or self.lexical_category == "pl."
+            or self.lexical_category == "fork."
+        ):
+            self.lexical_category_qid = "Q1084"  # noun
+        elif self.lexical_category == "vb." or self.lexical_category == "v.":
+            self.lexical_category_qid = "Q24905"  # verb
+        elif (
+            self.lexical_category == "adj."
+            or self.lexical_category == "part.adj."
+            or self.lexical_category == "part. adj."
+        ):
+            self.lexical_category_qid = "Q34698"  # adjective
+        elif (
+            self.lexical_category == "suffix"
+            or self.lexical_category == "præfiks"
+            or self.lexical_category == "i ssgr."
+            or self.lexical_category == "suffiks."
+        ):
+            self.lexical_category_qid = "Q62155"  # affix
+        elif self.lexical_category == "udråbsord" or self.lexical_category == "interj.":
+            self.lexical_category_qid = "Q83034"  # interj
+        elif self.lexical_category == "præp.":
+            self.lexical_category_qid = "Q4833830"  # preposition
+        elif self.lexical_category == "adv.":
+            self.lexical_category_qid = "Q380057"  # adverb
+        elif self.lexical_category == "propr.":
+            self.lexical_category_qid = "Q147276"  # proper noun
+        elif self.lexical_category == "num.":
+            self.lexical_category_qid = "Q63116"  # numeral
+        elif self.lexical_category == "konj.":
+            self.lexical_category_qid = "Q36484"  # conjunction
+        elif self.lexical_category == "pron.":
+            self.lexical_category_qid = "Q36224"  # pronoun
+        elif self.lexical_category is None:
             logger.error(f"No lexical category found for {self.url()}")
-        # elif string == "subst. ell. (i bet. 1) en." or string == "interj., adj." or string == "adv. og adj.":
+        # elif self.lexical_category == "subst. ell. (i bet. 1) en." or self.lexical_category == "interj., adj." or self.lexical_category == "adv. og adj.":
         #     return None
         else:
-            logger.error(f"Lexical category {string} not recognized, see {self.url()}")
-            return None
+            logger.error(
+                f"Lexical category {self.lexical_category} not recognized, see {self.url()}"
+            )
 
-    def json(self):
-        return json.dumps(dict(
-            id=self.id,
-            l=self.lemma,
-            lc=self.lexical_category
-        ))
+    # def json(self):
+    #     return json.dumps(dict(id=self.id, l=self.lemma, lc=self.lexical_category_qid))
 
     def csv(self):
-        return f"{self.id},{self.lemma},{self.lexical_category}\n"
+        return f"{self.id},{self.fixed_lemma},{self.lexical_category_qid}\n"
 
     def url(self):
         return f"https://ordnet.dk/ods/ordbog?entry_id={self.id}&query=wd"
